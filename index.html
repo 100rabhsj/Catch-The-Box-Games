@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Box</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            background: lightblue;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Catch the Box</h1>
+    <p>Move the paddle with the left and right arrow keys, mouse, or touch.</p>
+    <h2>Score: <span id="score">0</span></h2>
+    <h2>High Score: <span id="highScore">0</span></h2>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const highScoreDisplay = document.getElementById("highScore");
+
+        let paddle = { x: 150, y: 350, width: 100, height: 10, speed: 20 };
+        let box = { x: Math.random() * 350, y: 0, width: 20, height: 20, speed: 2, color: "red" };
+        let score = 0;
+        let highScore = localStorage.getItem("highScore") || 0;
+        highScoreDisplay.textContent = highScore;
+
+        document.addEventListener("keydown", movePaddle);
+        canvas.addEventListener("mousemove", movePaddleWithMouse);
+        canvas.addEventListener("touchmove", movePaddleWithTouch);
+
+        function movePaddle(e) {
+            if (e.key === "ArrowLeft" && paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            } else if (e.key === "ArrowRight" && paddle.x + paddle.width < canvas.width) {
+                paddle.x += paddle.speed;
+            }
+        }
+
+        function movePaddleWithMouse(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            paddle.x = mouseX - paddle.width / 2;
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+        }
+
+        function movePaddleWithTouch(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            paddle.x = touchX - paddle.width / 2;
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+            e.preventDefault(); // Prevents scrolling while playing
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "blue";
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+            ctx.fillStyle = box.color;
+            ctx.fillRect(box.x, box.y, box.width, box.height);
+
+            box.y += box.speed;
+
+            if (box.y + box.height >= paddle.y && box.x > paddle.x && box.x < paddle.x + paddle.width) {
+                score++;
+                scoreDisplay.textContent = score;
+                if (score % 10 === 0) {
+                    box.speed += 1; // Increase speed every 10 points
+                    changeBoxColor(); // Change color every 10 points
+                }
+                resetBox();
+            }
+
+            if (box.y > canvas.height) {
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("highScore", highScore);
+                    highScoreDisplay.textContent = highScore;
+                }
+                alert("Game Over! Your score: " + score);
+                score = 0;
+                box.speed = 2; // Reset speed on game over
+                box.color = "red"; // Reset color
+                scoreDisplay.textContent = score;
+                resetBox();
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function resetBox() {
+            box.y = 0;
+            box.x = Math.random() * (canvas.width - box.width);
+        }
+
+        function changeBoxColor() {
+            const colors = ["red", "green", "blue", "purple", "orange", "pink", "yellow", "cyan"];
+            box.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        updateGame();
+    </script>
+</body>
+</html>
