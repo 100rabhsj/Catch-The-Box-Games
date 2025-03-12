@@ -53,7 +53,7 @@
                 this.y = 20;
                 this.width = 40;
                 this.height = 20;
-                this.speed = 2;
+                this.speed = 2 + score * 0.1;
             }
             move() {
                 this.y += this.speed;
@@ -64,11 +64,30 @@
             }
         }
 
+        class Boss {
+            constructor() {
+                this.x = canvas.width / 4;
+                this.y = 50;
+                this.width = canvas.width / 2;
+                this.height = 50;
+                this.health = 5;
+                this.speed = 1;
+            }
+            move() {
+                this.y += this.speed;
+            }
+            draw() {
+                ctx.fillStyle = "purple";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
         const player = new Player();
         let bullets = [];
         let targets = [];
+        let boss = null;
         let score = 0;
-        let highScore = localStorage.getItem("highScore") || 0;
+        let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
         let missedTargets = 0;
         highScoreDisplay.innerText = highScore;
 
@@ -82,6 +101,7 @@
             missedTargets = 0;
             bullets = [];
             targets = [];
+            boss = null;
             scoreDisplay.innerText = score;
             highScoreDisplay.innerText = highScore;
         }
@@ -115,9 +135,35 @@
                         targets.splice(tIndex, 1);
                         score++;
                         scoreDisplay.innerText = score;
+
+                        if (score % 10 === 0) {
+                            boss = new Boss();
+                        }
                     }
                 });
             });
+            
+            if (boss) {
+                boss.move();
+                boss.draw();
+                bullets.forEach((bullet, bIndex) => {
+                    if (
+                        bullet.x < boss.x + boss.width &&
+                        bullet.x + bullet.width > boss.x &&
+                        bullet.y < boss.y + boss.height &&
+                        bullet.y + bullet.height > boss.y
+                    ) {
+                        bullets.splice(bIndex, 1);
+                        boss.health--;
+                        if (boss.health <= 0) {
+                            boss = null;
+                            score += 5;
+                            scoreDisplay.innerText = score;
+                        }
+                    }
+                });
+            }
+
             requestAnimationFrame(gameLoop);
         }
 
@@ -152,6 +198,10 @@
         setInterval(() => {
             targets.push(new Target());
         }, 2000);
+
+        window.onload = () => {
+            highScoreDisplay.innerText = highScore;
+        };
 
         gameLoop();
     </script>
