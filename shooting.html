@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shooting Game</title>
+    <style>
+        canvas { background: #000; display: block; margin: auto; touch-action: none; }
+        body { text-align: center; color: black; font-family: Arial, sans-serif; }
+    </style>
+</head>
+<body>
+    <h1>Score: <span id="score">0</span> | High Score: <span id="highScore">0</span></h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const highScoreDisplay = document.getElementById("highScore");
+
+        class Player {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height - 50;
+                this.width = 40;
+                this.height = 20;
+                this.speed = 10;
+            }
+            draw() {
+                ctx.fillStyle = "white";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        class Bullet {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 5;
+                this.height = 10;
+                this.speed = 7;
+            }
+            move() {
+                this.y -= this.speed;
+            }
+            draw() {
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        class Target {
+            constructor() {
+                this.x = Math.random() * (canvas.width - 40);
+                this.y = 20;
+                this.width = 40;
+                this.height = 20;
+                this.speed = 2;
+            }
+            move() {
+                this.y += this.speed;
+            }
+            draw() {
+                ctx.fillStyle = "green";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        const player = new Player();
+        let bullets = [];
+        let targets = [];
+        let score = 0;
+        let highScore = localStorage.getItem("highScore") || 0;
+        let missedTargets = 0;
+        highScoreDisplay.innerText = highScore;
+
+        function gameOver() {
+            alert("Game Over! Your score: " + score);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+            }
+            score = 0;
+            missedTargets = 0;
+            bullets = [];
+            targets = [];
+            scoreDisplay.innerText = score;
+            highScoreDisplay.innerText = highScore;
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            player.draw();
+            bullets.forEach((bullet, index) => {
+                bullet.move();
+                bullet.draw();
+                if (bullet.y < 0) bullets.splice(index, 1);
+            });
+            targets.forEach((target, index) => {
+                target.move();
+                target.draw();
+                if (target.y > canvas.height) {
+                    targets.splice(index, 1);
+                    missedTargets++;
+                    if (missedTargets >= 10) gameOver();
+                }
+            });
+            bullets.forEach((bullet, bIndex) => {
+                targets.forEach((target, tIndex) => {
+                    if (
+                        bullet.x < target.x + target.width &&
+                        bullet.x + bullet.width > target.x &&
+                        bullet.y < target.y + target.height &&
+                        bullet.y + bullet.height > target.y
+                    ) {
+                        bullets.splice(bIndex, 1);
+                        targets.splice(tIndex, 1);
+                        score++;
+                        scoreDisplay.innerText = score;
+                    }
+                });
+            });
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowLeft" && player.x > 0) {
+                player.x -= player.speed;
+            } else if (event.key === "ArrowRight" && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            } else if (event.key === " ") {
+                bullets.push(new Bullet(player.x + player.width / 2, player.y));
+            }
+        });
+
+        canvas.addEventListener("mousemove", (event) => {
+            player.x = event.clientX - canvas.getBoundingClientRect().left - player.width / 2;
+        });
+
+        canvas.addEventListener("click", () => {
+            bullets.push(new Bullet(player.x + player.width / 2, player.y));
+        });
+
+        canvas.addEventListener("touchmove", (event) => {
+            event.preventDefault();
+            let touch = event.touches[0];
+            player.x = touch.clientX - canvas.getBoundingClientRect().left - player.width / 2;
+        }, { passive: false });
+
+        canvas.addEventListener("touchstart", () => {
+            bullets.push(new Bullet(player.x + player.width / 2, player.y));
+        });
+
+        setInterval(() => {
+            targets.push(new Target());
+        }, 2000);
+
+        gameLoop();
+    </script>
+</body>
+</html>

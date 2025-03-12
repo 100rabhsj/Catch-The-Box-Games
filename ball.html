@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Ball</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            background: lightblue;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Catch the Ball</h1>
+    <p>Move the paddle with the left and right arrow keys, mouse, or touch.</p>
+    <h2>Score: <span id="score">0</span></h2>
+    <h2>High Score: <span id="highScore">0</span></h2>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    
+    <audio id="catchSound" src="catch.mp3"></audio>
+    <audio id="bombSound" src="bomb.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const highScoreDisplay = document.getElementById("highScore");
+        const catchSound = document.getElementById("catchSound");
+        const bombSound = document.getElementById("bombSound");
+
+        let paddle = { x: 150, y: 350, width: 100, height: 10, speed: 20 };
+        let ball = { x: Math.random() * 350, y: 0, radius: 10, speed: 2, color: "red", isBomb: false };
+        let score = 0;
+        let highScore = localStorage.getItem("highScore") || 0;
+        highScoreDisplay.textContent = highScore;
+
+        document.addEventListener("keydown", movePaddle);
+        canvas.addEventListener("mousemove", movePaddleWithMouse);
+        canvas.addEventListener("touchmove", movePaddleWithTouch);
+
+        function movePaddle(e) {
+            if (e.key === "ArrowLeft" && paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            } else if (e.key === "ArrowRight" && paddle.x + paddle.width < canvas.width) {
+                paddle.x += paddle.speed;
+            }
+        }
+
+        function movePaddleWithMouse(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            paddle.x = mouseX - paddle.width / 2;
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+        }
+
+        function movePaddleWithTouch(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            paddle.x = touchX - paddle.width / 2;
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+            e.preventDefault(); // Prevents scrolling while playing
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "blue";
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+            ctx.fillStyle = ball.color;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ball.y += ball.speed;
+
+            if (ball.y + ball.radius >= paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                if (ball.isBomb) {
+                    bombSound.play();
+                    alert("💣 Boom! You caught a bomb. Game Over!");
+                    resetGame();
+                    return;
+                }
+                
+                catchSound.play();
+                score++;
+                scoreDisplay.textContent = score;
+                if (score % 10 === 0) {
+                    ball.speed += 1; // Increase speed every 10 points
+                    changeBallColor(); // Change color every 10 points
+                }
+                resetBall();
+            }
+
+            if (ball.y > canvas.height) {
+                if (!ball.isBomb) {
+                    alert("Game Over! You missed the ball.");
+                    resetGame();
+                    return;
+                } else {
+                    resetBall();
+                }
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function resetBall() {
+            ball.y = 0;
+            ball.x = Math.random() * (canvas.width - ball.radius * 2) + ball.radius;
+            ball.isBomb = Math.random() < 0.2; // 20% chance to be a bomb
+            ball.color = ball.isBomb ? "black" : getRandomColor();
+        }
+
+        function getRandomColor() {
+            const colors = ["red", "green", "blue", "purple", "orange", "pink", "yellow", "cyan"];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function changeBallColor() {
+            if (!ball.isBomb) {
+                ball.color = getRandomColor();
+            }
+        }
+
+        function resetGame() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+                highScoreDisplay.textContent = highScore;
+            }
+            score = 0;
+            ball.speed = 2; // Reset speed on game over
+            scoreDisplay.textContent = score;
+            resetBall();
+            updateGame();
+        }
+
+        updateGame();
+    </script>
+</body>
+</html>
