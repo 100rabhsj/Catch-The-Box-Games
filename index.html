@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catch the Box</title>
+    <title>Catch the Ball</title>
     <style>
         body {
             text-align: center;
@@ -101,7 +101,9 @@
             }
 
             if (ball.y > canvas.height) {
-                resetBall();
+                alert("Game Over! You missed the ball.");
+                resetGame();
+                return;
             }
 
             requestAnimationFrame(updateGame);
@@ -135,6 +137,7 @@
             ball.speed = 2; // Reset speed on game over
             scoreDisplay.textContent = score;
             resetBall();
+            updateGame();
         }
 
         updateGame();
