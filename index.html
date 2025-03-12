@@ -29,7 +29,7 @@
         const highScoreDisplay = document.getElementById("highScore");
 
         let paddle = { x: 150, y: 350, width: 100, height: 10, speed: 20 };
-        let box = { x: Math.random() * 350, y: 0, width: 20, height: 20, speed: 2, color: "red" };
+        let box = { x: Math.random() * 350, y: 0, width: 20, height: 20, speed: 2, color: "red", isBomb: false };
         let score = 0;
         let highScore = localStorage.getItem("highScore") || 0;
         highScoreDisplay.textContent = highScore;
@@ -75,6 +75,12 @@
             box.y += box.speed;
 
             if (box.y + box.height >= paddle.y && box.x > paddle.x && box.x < paddle.x + paddle.width) {
+                if (box.isBomb) {
+                    alert("Boom! You caught a bomb. Game Over!");
+                    resetGame();
+                    return;
+                }
+                
                 score++;
                 scoreDisplay.textContent = score;
                 if (score % 10 === 0) {
@@ -85,16 +91,6 @@
             }
 
             if (box.y > canvas.height) {
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem("highScore", highScore);
-                    highScoreDisplay.textContent = highScore;
-                }
-                alert("Game Over! Your score: " + score);
-                score = 0;
-                box.speed = 2; // Reset speed on game over
-                box.color = "red"; // Reset color
-                scoreDisplay.textContent = score;
                 resetBox();
             }
 
@@ -104,11 +100,31 @@
         function resetBox() {
             box.y = 0;
             box.x = Math.random() * (canvas.width - box.width);
+            box.isBomb = Math.random() < 0.2; // 20% chance to be a bomb
+            box.color = box.isBomb ? "black" : getRandomColor();
+        }
+
+        function getRandomColor() {
+            const colors = ["red", "green", "blue", "purple", "orange", "pink", "yellow", "cyan"];
+            return colors[Math.floor(Math.random() * colors.length)];
         }
 
         function changeBoxColor() {
-            const colors = ["red", "green", "blue", "purple", "orange", "pink", "yellow", "cyan"];
-            box.color = colors[Math.floor(Math.random() * colors.length)];
+            if (!box.isBomb) {
+                box.color = getRandomColor();
+            }
+        }
+
+        function resetGame() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+                highScoreDisplay.textContent = highScore;
+            }
+            score = 0;
+            box.speed = 2; // Reset speed on game over
+            scoreDisplay.textContent = score;
+            resetBox();
         }
 
         updateGame();
