@@ -70,7 +70,7 @@
                 this.y = 50;
                 this.width = canvas.width / 2;
                 this.height = 50;
-                this.health = 5;
+                this.health = 10;
                 this.speed = 1;
             }
             move() {
@@ -182,16 +182,6 @@
         });
 
         canvas.addEventListener("click", () => {
-            bullets.push(new Bullet(player.x + player.width / 2, player.y));
-        });
-
-        canvas.addEventListener("touchmove", (event) => {
-            event.preventDefault();
-            let touch = event.touches[0];
-            player.x = touch.clientX - canvas.getBoundingClientRect().left - player.width / 2;
-        }, { passive: false });
-
-        canvas.addEventListener("touchstart", () => {
             bullets.push(new Bullet(player.x + player.width / 2, player.y));
         });
 
